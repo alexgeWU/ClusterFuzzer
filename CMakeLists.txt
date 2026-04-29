@@ -2,22 +2,19 @@ cmake_minimum_required(VERSION 3.30)
 project(ClusterFuzzer)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Magically fetch FTXUI from GitHub
-include(FetchContent)
-FetchContent_Declare(
-        ftxui
-        GIT_REPOSITORY https://github.com/ArthurSonzogni/FTXUI
-        GIT_TAG main # You can lock this to a version like v5.0.0 later
-)
-FetchContent_MakeAvailable(ftxui)
+add_library(mylib src/lib.cpp)
+target_include_directories(mylib PUBLIC include)
 
-# Create your executable
-add_executable(showcase main.cpp)
+add_executable(my_program src/main.cpp)
+target_include_directories(my_program PRIVATE include)
+target_link_libraries(my_program PRIVATE mylib)
 
-# Link the three main FTXUI modules to your app
-target_link_libraries(showcase PRIVATE
-        ftxui::screen
-        ftxui::dom
-        ftxui::component
-)
+if(DEFINED ENV{LIB_FUZZING_ENGINE})
+    add_executable(fuzz_target fuzz/fuzz_target.cpp)
+    target_include_directories(fuzz_target PRIVATE include)
+    target_link_libraries(fuzz_target PRIVATE mylib $ENV{LIB_FUZZING_ENGINE})
+    target_compile_options(fuzz_target PRIVATE -fsanitize=fuzzer,address)
+    target_link_options(fuzz_target PRIVATE -fsanitize=fuzzer,address)
+endif()
