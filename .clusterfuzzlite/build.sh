@@ -1,12 +1,13 @@
 #!/bin/bash -eu
 
-# Build the main project as a static library so the fuzz target can link against it
-$CXX $CXXFLAGS -c main.cpp -o main.o
+# Compile shared library from src/lib.cpp
+$CXX $CXXFLAGS -I include -c src/lib.cpp -o lib.o
 
-ar rcs libmain.a main.o
+ar rcs libmylib.a lib.o
 
-# Build the fuzz target and link it against the main library and the fuzzing engine
-$CXX $CXXFLAGS fuzz_target.cpp \
+# Build the fuzz target, linking against the shared library and fuzzing engine
+$CXX $CXXFLAGS -I include \
+    fuzz/fuzz_target.cpp \
     -o $OUT/fuzz_target \
-    libmain.a \
+    libmylib.a \
     $LIB_FUZZING_ENGINE
