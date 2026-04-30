@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -86,4 +87,4 @@ private:
 // ─────────────────────────────────────────
 // CLI shell loop
 // ─────────────────────────────────────────
-void runShell(FileSystem& fs);
+void runShell(FileSystem& fs, std::istream& in = std::cin);

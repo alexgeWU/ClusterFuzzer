@@ -322,13 +322,13 @@ static std::vector<std::string> tokenize(const std::string& line) {
 // Shell — main loop
 // ══════════════════════════════════════════
 
-void runShell(FileSystem& fs) {
+void runShell(FileSystem& fs, std::istream& in) {
     std::cout << "\n  MockFS  —  type 'help' for commands\n\n";
 
     std::string line;
     while (true) {
         std::cout << "mockfs:" << fs.currentPath() << "$ ";
-        if (!std::getline(std::cin, line)) break;   // EOF
+          if (!std::getline(in, line)) break;  // EOF
 
         auto args = tokenize(line);
         if (args.empty()) continue;
