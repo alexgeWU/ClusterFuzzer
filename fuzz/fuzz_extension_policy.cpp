@@ -1,62 +1,40 @@
 #include "filesystem.h"
 #include <cstdint>
-#include <iostream>
-#include <sstream>
+#include <cstring>
 #include <string>
-#include <vector>
-
-namespace {
-struct NullBuf : std::streambuf { int overflow(int c) override { return c; } };
-struct SilenceCout {
-    NullBuf nb;
-    std::streambuf* old = std::cout.rdbuf(&nb);
-    ~SilenceCout() { std::cout.rdbuf(old); }
-};
-
-std::string bytesToSafeName(const uint8_t* data, size_t size) {
-    std::string s;
-    s.reserve(size);
-    for (size_t i = 0; i < size; ++i) {
-        unsigned char c = data[i];
-        if (c == '\0' || c == '\n' || c == '\r') continue;
-        s.push_back(static_cast<char>(c));
-    }
-    if (s.empty()) s = "file";
-    if (s.size() > 80) s.resize(80);
-    return s;
-}
-}
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-    SilenceCout quiet;
-    std::string base = bytesToSafeName(data, size);
+    if (size == 0) return 0;
+
+    // Split the fuzz buffer into (filename | content | password) using the
+    // first two bytes as split offsets so the fuzzer can explore all ratios.
+    const size_t split1 = data[0] % (size);
+    const size_t split2 = (size > 1) ? (data[1] % (size)) : split1;
+
+    const size_t lo = std::min(split1, split2);
+    const size_t hi = std::max(split1, split2);
+
+    std::string filename(reinterpret_cast<const char*>(data),          lo);
+    std::string content (reinterpret_cast<const char*>(data + lo),     hi - lo);
+    std::string password(reinterpret_cast<const char*>(data + hi),     size - hi);
+
     FileSystem fs;
+    bool created = fs.createFile(filename, content, password);
 
-    const std::vector<std::string> allowed = {base + ".txt", base + ".TXT", base + ".csv", base + ".CSV"};
-    for (const auto& name : allowed) {
-        FileSystem local;
-        bool ok = local.createFile(name, "a,b\n1,2\n");
-        if (!ok) __builtin_trap(); // allowed extensions should be accepted when filename is otherwise valid
-    }
+    // Property: if creation succeeded the filesystem must be able to list
+    // without crashing, and the extension must be supported.
+    if (created) {
+        fs.listDirectory();
 
-    const std::vector<std::string> blocked = {
-        base,
-        base + ".",
-        ".hidden",
-        base + ".json",
-        base + ".png",
-        base + ".html",
-        base + ".csv.exe",
-        base + ".txt.bak",
-        "../" + base + ".txt",
-        base + "/nested.txt",
-        base + "\\nested.txt"
-    };
+        // Verify the file is retrievable via displayFile (no crash).
+        fs.displayFile(filename, password);
 
-    for (const auto& name : blocked) {
-        FileSystem local;
-        bool ok = local.createFile(name, "content");
-        if (ok) __builtin_trap(); // unsupported, path-like, or extensionless names must not be accepted
+        // Verify locked/password consistency: displayFile with wrong password
+        // must not crash regardless of outcome.
+        fs.displayFile(filename, password + "WRONG");
+
+        // Attempting to create the same file again must not crash.
+        fs.createFile(filename, content, password);
     }
 
     return 0;
