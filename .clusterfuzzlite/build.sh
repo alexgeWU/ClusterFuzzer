@@ -10,12 +10,10 @@ $CXX $CXXFLAGS -std=c++17 -I include -c src/filesystem.cpp -o filesystem.o
 ar rcs libmockfs.a filesystem.o
 
 for target in \
-  fuzz_extension_policy \
-  fuzz_csv_render \
-  fuzz_password_auth \
-  fuzz_shell_input \
-  fuzz_directory_paths \
-  fuzz_edit_lifecycle; do
+  fuzz_directory_permissions \
+  fuzz_file_permissions \
+  fuzz_permission_ownership \
+  fuzz_permission_shell_sequences; do
     $CXX $CXXFLAGS -std=c++17 -I include \
         fuzz/${target}.cpp \
         -o $OUT/${target} \
