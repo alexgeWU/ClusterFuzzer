@@ -1,24 +1,36 @@
 #!/bin/bash -eu
 
-# ClusterFuzzLite/libFuzzer build script.
-# Expected project layout:
-#   include/filesystem.h
-#   src/filesystem.cpp
-#   fuzz/*.cpp
+# ClusterFuzzLite/libFuzzer build script for MockFS.
+# Supports either:
+#   include/filesystem.h + src/filesystem.cpp + fuzz/*.cpp
+# or the flat uploaded layout:
+#   filesystem.h + filesystem.cpp + fuzz/*.cpp
 
-$CXX $CXXFLAGS -std=c++17 -I include -c src/filesystem.cpp -o filesystem.o
-ar rcs libmockfs.a filesystem.o
+ROOT="${SRC:-$(pwd)}"
 
-for target in \
-  fuzz_extension_policy \
-  fuzz_csv_render \
-  fuzz_password_auth \
-  fuzz_shell_input \
-  fuzz_directory_paths \
-  fuzz_edit_lifecycle; do
-    $CXX $CXXFLAGS -std=c++17 -I include \
-        fuzz/${target}.cpp \
-        -o $OUT/${target} \
-        libmockfs.a \
-        $LIB_FUZZING_ENGINE
+if [[ -f "$ROOT/src/filesystem.cpp" ]]; then
+  SRC_FILE="$ROOT/src/filesystem.cpp"
+  INC_DIR="$ROOT/include"
+elif [[ -f "$ROOT/filesystem.cpp" ]]; then
+  SRC_FILE="$ROOT/filesystem.cpp"
+  INC_DIR="$ROOT"
+else
+  echo "Could not find filesystem.cpp in $ROOT/src or $ROOT" >&2
+  exit 1
+fi
+
+FUZZ_DIR="$ROOT/fuzz"
+: "${OUT:=$ROOT/out}"
+mkdir -p "$OUT"
+
+$CXX $CXXFLAGS -std=c++17 -I"$INC_DIR" -I"$FUZZ_DIR" -c "$SRC_FILE" -o "$OUT/filesystem.o"
+ar rcs "$OUT/libmockfs.a" "$OUT/filesystem.o"
+
+for fuzz_src in "$FUZZ_DIR"/fuzz_*.cpp; do
+  target="$(basename "$fuzz_src" .cpp)"
+  $CXX $CXXFLAGS -std=c++17 -I"$INC_DIR" -I"$FUZZ_DIR" \
+      "$fuzz_src" \
+      -o "$OUT/$target" \
+      "$OUT/libmockfs.a" \
+      $LIB_FUZZING_ENGINE
 done
