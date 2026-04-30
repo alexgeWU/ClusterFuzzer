@@ -37,7 +37,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-          fuzz-seconds: 120
+          fuzz-seconds: 600
 
           mode: 'code-change'
           sanitizer: ${{ matrix.sanitizer }}
