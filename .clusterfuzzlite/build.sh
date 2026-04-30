@@ -5,9 +5,10 @@ $CXX $CXXFLAGS -I include -c src/filesystem.cpp -o filesystem.o
 
 ar rcs libmockfs.a filesystem.o
 
-# Build the fuzz target, linking against the shared library and fuzzing engine
-$CXX $CXXFLAGS -I include \
-    fuzz/fuzz_display_file.cpp \
-    -o $OUT/fuzz_display_file \
-    libmockfs.a \
-    $LIB_FUZZING_ENGINE
+for target in fuzz_display_file fuzz_shell_input fuzz_password fuzz_directory fuzz_edit_file; do
+    $CXX $CXXFLAGS -I include \
+        fuzz/${target}.cpp \
+        -o $OUT/${target} \
+        libmockfs.a \
+        $LIB_FUZZING_ENGINE
+done
