@@ -1,22 +1,40 @@
 #pragma once
 
 #include <iostream>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <optional>
 
 // ─────────────────────────────────────────
-// Represents a single text file in the FS
+// Supported file types in the mock FS
+// ─────────────────────────────────────────
+enum class FileType {
+    Text,
+    Csv,
+    Unknown
+};
+
+std::string fileTypeToString(FileType type);
+FileType inferFileTypeFromExtension(const std::string& extension);
+bool isSupportedFileExtension(const std::string& extension);
+
+// ─────────────────────────────────────────
+// Represents a single file in the FS
 // ─────────────────────────────────────────
 struct File {
-    std::string name;
-    std::string content;
+    std::string name;       // full filename, e.g. notes.txt or logo.png
+    std::string baseName;   // filename without extension, e.g. notes
+    std::string extension;  // normalized extension without '.', e.g. txt/png
+    FileType    type;
+    std::string content;    // text or CSV content
     std::string password;   // empty = no protection
     bool        locked;     // true if password-protected
 
-    File() : locked(false) {}
-    File(const std::string& name, const std::string& content, const std::string& password = "");
+    File();
+    File(const std::string& name,
+         const std::string& content,
+         const std::string& password = "");
 };
 
 // ─────────────────────────────────────────
@@ -47,6 +65,14 @@ public:
     bool createFile(const std::string& name,
                     const std::string& content,
                     const std::string& password = "");
+
+    bool createTextFile(const std::string& name,
+                        const std::string& content,
+                        const std::string& password = "");
+
+    bool createCsvFile(const std::string& name,
+                       const std::string& content,
+                       const std::string& password = "");
 
     bool displayFile(const std::string& name,
                      const std::string& password = "");

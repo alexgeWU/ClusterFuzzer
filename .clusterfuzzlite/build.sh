@@ -1,12 +1,22 @@
 #!/bin/bash -eu
 
-# Compile shared library from src/filesystem.cpp
-$CXX $CXXFLAGS -I include -c src/filesystem.cpp -o filesystem.o
+# ClusterFuzzLite/libFuzzer build script.
+# Expected project layout:
+#   include/filesystem.h
+#   src/filesystem.cpp
+#   fuzz/*.cpp
 
+$CXX $CXXFLAGS -std=c++17 -I include -c src/filesystem.cpp -o filesystem.o
 ar rcs libmockfs.a filesystem.o
 
-for target in fuzz_display_file fuzz_shell_input fuzz_password fuzz_directory fuzz_edit_file; do
-    $CXX $CXXFLAGS -I include \
+for target in \
+  fuzz_extension_policy \
+  fuzz_csv_render \
+  fuzz_password_auth \
+  fuzz_shell_input \
+  fuzz_directory_paths \
+  fuzz_edit_lifecycle; do
+    $CXX $CXXFLAGS -std=c++17 -I include \
         fuzz/${target}.cpp \
         -o $OUT/${target} \
         libmockfs.a \
