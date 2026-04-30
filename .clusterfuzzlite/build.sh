@@ -13,7 +13,7 @@ for target in \
   fuzz_directory_permissions \
   fuzz_file_permissions \
   fuzz_permission_ownership \
-  fuzz_permission_shell_sequence; do
+  fuzz_permission_shell_sequences; do
     $CXX $CXXFLAGS -std=c++17 -I include \
         fuzz/${target}.cpp \
         -o $OUT/${target} \
