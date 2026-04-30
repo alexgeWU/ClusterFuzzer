@@ -1,13 +1,11 @@
 #!/bin/bash -eu
 
-# Compile shared library from src/lib.cpp
-$CXX $CXXFLAGS -I include -c src/lib.cpp -o lib.o
+$CXX $CXXFLAGS -I include -c src/filesystem.cpp -o filesystem.o
 
-ar rcs libmylib.a lib.o
+ar rcs libmockfs.a lib.o filesystem.o
 
-# Build the fuzz target, linking against the shared library and fuzzing engine
 $CXX $CXXFLAGS -I include \
-    fuzz/fuzz_target.cpp \
-    -o $OUT/fuzz_target \
-    libmylib.a \
-    $LIB_FUZZING_ENGINE
+    fuzz/fuzz_display_file.cpp \
+    -o $OUT/fuzz_display_file \
+    libmockfs.a \
+    $LIB_FUZZING_ENGINENGINE
