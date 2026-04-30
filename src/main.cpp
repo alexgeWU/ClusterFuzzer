@@ -1,11 +1,8 @@
-#include <iostream>
-#include <ostream>
-#include "lib.h"
+#include "filesystem.h"
 
-
+//testing
 int main() {
- //hellooo
-    std::cout << "Hello World !" << std::endl;
-    printText("with input!");
+    FileSystem fs;
+    runShell(fs);
     return 0;
 }
